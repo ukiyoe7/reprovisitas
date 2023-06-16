@@ -1,4 +1,4 @@
-
+## NOVA ESTRUTURA DE CARTEIRAS
 
 library(DBI)
 library(tidyverse)
@@ -7,7 +7,7 @@ library(readr)
 library(googlesheets4)
 con2 <- dbConnect(odbc::odbc(), "reproreplica")
 
-## CLIENTES GERAL
+## CLIENTES GERAL =========================================================================
 
 
 cli <- dbGetQuery(con2, statement = read_file('NOVAS_CARTEIRAS_JUN23\\CLIENTS.sql'))
@@ -31,9 +31,7 @@ clien %>% filter(SETOR=='SETOR 1 - FLORIANOPOLIS REDES') %>%
 
 View(check_cli)
 
-
 write.csv2(check_cli,file = "check_cli.csv")
-
 
 
 ## SETOR 1 ================================================================================================
@@ -44,10 +42,15 @@ SETOR1_REV <- save(SETOR1_REV,file = "C:\\Users\\Repro\\Documents\\R\\ADM\\VISIT
 setor1_rev <-
   get(load("C:\\Users\\Repro\\Documents\\R\\ADM\\VISITAS\\NOVAS_CARTEIRAS_JUN23\\SETOR1_REV.RData"))
 
-setor1_rev1 <-
-setor1_rev %>% filter(is.na(SITUAÇÃO)) 
-
 View(setor1_rev)
+
+setor1_rev %>% distinct(SITUAÇÃO)
+
+
+setor1_rev_inativos <-
+  setor1_rev %>% rename(STATUS=SITUAÇÃO) %>% filter(STATUS=='SEM VENDA'| STATUS=='INATIVO') 
+
+View(setor1_rev_inativos)
 
 
 ## SETOR 2 ================================================================================================
@@ -57,14 +60,16 @@ SETOR2_REV <- save(SETOR2_REV,file = "C:\\Users\\Repro\\Documents\\R\\ADM\\VISIT
 setor2_rev <-
   get(load("C:\\Users\\Repro\\Documents\\R\\ADM\\VISITAS\\NOVAS_CARTEIRAS_JUN23\\SETOR2_REV.RData"))
 
+View(setor2_rev)
+
+setor2_rev %>% distinct(STATUS)
+
 
 setor2_rev_inativos <-
-setor2_rev %>% filter(!is.na(STATUS),STATUS!="ESPELHO") 
+setor2_rev %>% filter(STATUS=='SEM VENDA'| STATUS=='INATIVO') 
 
 View(setor2_rev_inativos)
 
-
-range_write(setor2_rev_inativos,ss="1rhqjF4c_bKm4Utemn1DtSqL8S4VGOIWTfKAywHarGJ4", sheet = "SETOR2")
 
 ## SETOR 3 ================================================================================================
 
@@ -84,9 +89,6 @@ setor3_rev_inativos <-
 
 View(setor3_rev_inativos)
 
-## write sheets
-
-range_write(setor3_rev_inativos,ss="1rhqjF4c_bKm4Utemn1DtSqL8S4VGOIWTfKAywHarGJ4", sheet = "SETOR3")
 
 ## SETOR 4 ================================================================================================
 
@@ -98,16 +100,16 @@ setor4_rev <-
 
 View(setor4_rev)
 
+setor4_rev %>% distinct(Coluna1)
+
 ## revisar inativos
 
 setor4_rev_inativos <-
-  setor3_rev %>% filter(STATUS=="FECHADO" | STATUS=="SEM VENDA") 
+  setor4_rev %>% rename(STATUS=Coluna1) %>% filter(STATUS=="FECHOU" | STATUS=="fechou" | STATUS=="SEM VENDAS" ) 
 
 View(setor4_rev_inativos)
 
-## write sheets
 
-range_write(setor4_rev_inativos,ss="1rhqjF4c_bKm4Utemn1DtSqL8S4VGOIWTfKAywHarGJ4", sheet = "SETOR3")
 
 ## SETOR 5 ================================================================================================
 
@@ -120,6 +122,17 @@ setor5_rev <-
 
 View(setor5_rev)
 
+setor5_rev %>% distinct(STATUS)
+
+## revisar inativos
+
+setor5_rev_inativos <-
+  setor5_rev %>% filter(STATUS=="INATIVO" | STATUS=="fechou" | STATUS=="Trocou CNPJ" | STATUS=="Sem Venda" | STATUS=="SEM VENDA") 
+
+View(setor5_rev_inativos)
+
+
+
 ## SETOR 6 ================================================================================================
 
 
@@ -129,6 +142,8 @@ setor6_rev <-
   get(load("C:\\Users\\Repro\\Documents\\R\\ADM\\VISITAS\\NOVAS_CARTEIRAS_JUN23\\SETOR6_REV.RData"))
 
 View(setor6_rev)
+
+
 
 ## SETOR 7 ================================================================================================
 
@@ -140,6 +155,43 @@ setor7_rev <-
 
 
 View(setor7_rev)
+
+setor7_rev %>% distinct(OBSERVAÇÃO)
+
+
+## revisar inativos
+
+setor7_rev_inativos <-
+  setor7_rev %>%  rename(STATUS=OBSERVAÇÃO) %>% filter(STATUS=="INATIVO" | STATUS=="FECHOU" | STATUS=="Trocou CNPJ" | STATUS=="SEM VENDA") 
+
+View(setor7_rev_inativos)
+
+
+
+## WRITE SHEETS ===================================================================================
+
+setores_rev_inativos <- rbind(setor1_rev_inativos,
+                              setor2_rev_inativos,
+                              setor3_rev_inativos,
+                              setor4_rev_inativos,
+                              setor5_rev_inativos,
+                              setor7_rev_inativos)
+
+View(setores_rev_inativos)
+
+parts <- setores_rev_inativos %>% 
+  slice(n = nrow(setores_rev_inativos), groups = rep(1:4, length.out = nrow(setores_rev_inativos)))
+
+# Access each part
+part1 <- parts[[1]]
+part2 <- parts[[2]]
+part3 <- parts[[3]]
+part4 <- parts[[4]]
+  
+  
+  
+
+range_write(setor7_rev_inativos,ss="1rhqjF4c_bKm4Utemn1DtSqL8S4VGOIWTfKAywHarGJ4", sheet = "SETOR7")
 
 
 
