@@ -32,7 +32,7 @@ cli_novo <- dbGetQuery(con2,"SELECT
                                                         FROM ZONA 
                                                          WHERE ZOCODIGO IN (20,21,22,23,24,25,26,27,28))Z ON 
                                                            E.ZOCODIGO=Z.ZOCODIGO WHERE ENDFAT='S')A ON C.CLICODIGO=A.CLICODIGO
-                                      WHERE CLICLIENTE='S' AND CLIDTCAD>='01.10.2022'")
+                                      WHERE CLICLIENTE='S' AND CLIDTCAD>='01.11.2022'")
 
 
 inativos <- dbGetQuery(con2,"
@@ -60,9 +60,10 @@ clien_novo <- anti_join(cli_novo,inativos,by="CLICODIGO")
 corder1 <- c("CIA","EQUIPE","SETOR","CNPJ","LOTR_CODIGO","INSCRICAO","RAZAOSOCIAL","NOMEFANTASIA","EMAIL","FREQUENCIA")
 
 
-ESTAB_PDV <- anti_join(clien_novo,SFA_100123 %>% 
-                   distinct(CNPJ)) %>%  
-                    left_join(.,aux_setores,by="SETOR") %>% 
+ESTAB_PDV <- anti_join(clien_novo,SFA_260523 %>% 
+              distinct(CNPJ),by="CNPJ") %>% 
+               left_join(.,aux_setores,by="SETOR") %>%
+                     mutate(SETOR=SFA) %>% 
                      mutate(NOMEFANTASIA=paste0(NOMEFANTASIA," (",CLICODIGO,")")) %>% 
                       mutate(CIA=1) %>% 
                        mutate(EQUIPE=4) %>% 
@@ -73,12 +74,12 @@ ESTAB_PDV <- anti_join(clien_novo,SFA_100123 %>%
                             .[,corder1] 
                            
 
-range_write(data = ESTAB_PDV,ss="1B3wgbhaCv-f3vIrCwNcuS-RslThBXwl0cAn0H9f3iPA",sheet = "ESTAB_PDV",range = "A1")
+range_write(data = ESTAB_PDV,ss="1z1PsKuM5loETDxSAuUeXCag5ZNL2iAdHT6di3-UVHSA",sheet = "ESTAB_PDV",range = "A1")
 
 ## ENDERECO =========================================================================================
 ## get addresses and write on google sheets
 
-edx <- anti_join(clien_novo,SFA_100123 %>% distinct(CNPJ)) %>% select(CLICODIGO)
+edx <- anti_join(clien_novo,SFA_260523 %>% distinct(CNPJ)) %>% select(CLICODIGO)
 
 
 endcli_sql <- glue_sql("
@@ -97,10 +98,10 @@ SELECT DISTINCT C.CLICODIGO,
                             ENDDDD1 DDD, 
                              ENDFONE1 TELEF1
                               FROM CLIEN C
-                              LEFT JOIN ENDCLI ED ON C.CLICODIGO=ED.CLICODIGO
-                              LEFT JOIN CIDADE CD ON ED.CIDCODIGO=CD.CIDCODIGO
-                              WHERE
-                              CLICLIENTE='S' AND ENDFAT='S' AND C.CLICODIGO IN ({edx$CLICODIGO*})")
+                               LEFT JOIN ENDCLI ED ON C.CLICODIGO=ED.CLICODIGO
+                                LEFT JOIN CIDADE CD ON ED.CIDCODIGO=CD.CIDCODIGO
+                                 WHERE
+                                  CLICLIENTE='S' AND ENDFAT='S' AND C.CLICODIGO IN ({edx$CLICODIGO*})")
 
 endcli<-  dbGetQuery(con2,endcli_sql) 
 
@@ -108,15 +109,17 @@ endcli<-  dbGetQuery(con2,endcli_sql)
 corder <- c("CIA","EQUIPE","SETOR","CNPJ","REGIAO","TP_LOGRAD","LOGRAD","NUMERO","COMPL","CEP","BAIRRO","CIDADE","UF","DDD","TELEF1")
 
 
-ESTAB_LOCAL_PDV <- left_join(endcli,novos_sfa %>% select(CNPJ,SETOR),by="CNPJ") %>% 
-                                                   mutate(CIA=1) %>% 
-                                                     mutate(EQUIPE=4) %>% 
-                                                      mutate(REGIAO='') %>% 
-                                                       arrange(desc(CLICODIGO)) %>% 
-                                                        .[,corder] 
+ESTAB_LOCAL_PDV <- left_join(endcli,cli_novo %>% select(CNPJ,SETOR) %>% as.data.frame(),by="CNPJ") %>%
+                                                    left_join(.,aux_setores,by="SETOR") %>% 
+                                                     mutate(SETOR=SFA) %>%
+                                                      mutate(CIA=1) %>% 
+                                                       mutate(EQUIPE=4) %>% 
+                                                        mutate(REGIAO='') %>% 
+                                                         arrange(desc(CLICODIGO)) %>% 
+                                                          .[,corder] 
 
 
-range_write(data = ESTAB_LOCAL_PDV,ss="1B3wgbhaCv-f3vIrCwNcuS-RslThBXwl0cAn0H9f3iPA",sheet = "ESTAB_LOCAL_PDV",range = "A1")
+range_write(data = ESTAB_LOCAL_PDV,ss="1z1PsKuM5loETDxSAuUeXCag5ZNL2iAdHT6di3-UVHSA",sheet = "ESTAB_LOCAL_PDV",range = "A1")
 
 
 
